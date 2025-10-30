@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vocabulary Challenge</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+            background: #f0f5f9;
+            margin: 20px;
+        }
+        h1 {
+            color: #2d9988;
+            text-align: center;
+            font-size: 2.8em;
+            margin: 20px 0;
+            letter-spacing: 2px;
+        }
+        #container {
+            display: flex;
+            justify-content: space-around;
+            margin: 30px;
+            gap: 20px;
+        }
+        #wordArea, #meaningArea, #vocabManager {
+            width: 45%;
+            padding: 25px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11);
+            border: 1px solid #e6ecf0;
+        }
+        #currentWord {
+            font-size: 1.8em;
+            color: #38a89d;
+            text-align: center;
+            margin: 20px;
+            padding: 15px;
+            background: #f8fbfc;
+            border-radius: 10px;
+        }
+        button {
+            background: #48c774;
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(72, 199, 116, 0.3);
+            margin-right: 10px;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            background: #3ec469;
+        }
+        #pauseBtn { 
+            background: #ffdd57; 
+            color: #333;
+        }
+        #pauseBtn:hover { background: #ffd83d; }
+        #continueBtn { display: none; }
+        .meaning-box {
+            display: inline-block;
+            margin: 8px;
+            padding: 10px 18px;
+            border: 2px solid #a0e6d1;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: #f8fcfb;
+            color: #2d9988;
+        }
+        .meaning-box:hover {
+            background: #e8f9f5;
+            transform: scale(1.05);
+        }
+        .meaning-box.correct {
+            opacity: 0;
+            pointer-events: none;
+            transition: 0.3s;
+        }
+        #timeSettings {
+            text-align: center;
+            margin: 20px 0;
+        }
+        #timeSettings input {
+            width: 60px;
+            padding: 8px;
+            margin: 0 10px;
+            border: 1px solid #cce7e3;
+            border-radius: 5px;
+            text-align: center;
+        }
+        #timer {
+            font-size: 1.4em;
+            color: #48c774;
+            text-align: center;
+            margin: 15px 0;
+        }
+        #score {
+            font-size: 2.2em;
+            color: #38a89d;
+            text-align: center;
+            font-weight: 600;
+            margin: 20px;
+        }
+        .vocab-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 8px;
+            background: #f8fcfb;
+            border-radius: 8px;
+        }
+        .lang-tabs {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+            gap: 10px;
+        }
+        .lang-tab {
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            background: #e8f9f5;
+            transition: all 0.3s ease;
+        }
+        .lang-tab.active {
+            background: #48c774;
+            color: white;
+        }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <h1>Vocabulary Challenge 🌿</h1>
+    <button id="editVocabBtn" onclick="showVocabEditor()">Edit Vocab</button>
+    <div id="timeSettings">
+        <span>Set Time:</span>
+        <input type="number" id="minutes" min="0" value="2" placeholder="min">
+        <span>min</span>
+        <input type="number" id="seconds" min="0" max="59" value="0" placeholder="sec">
+        <span>sec</span>
+    </div>
+    <div id="container">
+        <div id="wordArea">
+            <div id="currentWord">Current Word: Ready? 🌸</div>
+            <button id="startBtn" onclick="startGame()">Start 🚀</button>
+            <button id="pauseBtn" onclick="pauseGame()">Pause</button>
+            <button id="continueBtn" onclick="continueGame()">Continue</button>
+        </div>
+        <div id="vocabManager" class="hidden">
+            <h3>Vocabulary Management</h3>
+            <div id="vocabList">
+                <div style="display:flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="selectAll" onchange="toggleAll(this)"> Select All
+                    <button id="returnGameBtn" onclick="showGamePage()">Return to Game</button>
+                </div>
+                <div style="display:flex;flex-wrap: wrap; gap: 10px; margin-top: 10px;">
+                    <button onclick="deleteSelected()">Batch Delete</button>
+                    <button onclick="addVocabulary()">Batch Add</button>
+                    <button onclick="importFromCSV()">Import from CSV</button>
+                    <button onclick="exportToCSV()">Export to CSV</button>
+                    <button onclick="swapLanguages()">Swap Languages</button>
+                </div>
+                <div id="vocabItems"></div>
+            </div>
+            <div style="margin-top: 20px;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                    <label for="delimiter">Delimiter:</label>
+                    <input type="text" id="delimiter" placeholder="Enter delimiter" value="=" style="flex-grow: 1;" oninput="updatePlaceholder()">
+                </div>
+                <textarea id="newWords" placeholder="Enter each line as langA = langB" rows="5" style="width: 100%;"></textarea>
+            </div>
+            </div>
+    </div>
+    <div id="meaningArea"></div>
+    <div id="timer">⏳ Time Left: 02:00</div>
+    <div id="score">⭐ Score: 0</div>
+
+    <script>
+        let vocabulary = {
+            'word-translation': [],
+        };
+
+        let currentLang = 'word-translation';
+        let audioContext;
+        let currentIndex = 0, score = 0, timeLeft, timer, shuffledWords;
+        let isPaused = false;
+
+        function updateInputPlaceholders() {
+            const [langA, langB] = currentLang.split('-');
+            const delimiter = document.getElementById('delimiter').value;
+            document.getElementById('newWords').placeholder = `Enter each line as "${langA} ${delimiter} ${langB}"`;
+        }
+
+        function resetGame() {
+            isPaused = false;
+            currentIndex = 0;
+            score = 0;
+            document.getElementById('score').textContent = '⭐ Score: 0';
+            document.getElementById('currentWord').textContent = 'Ready? 🌸';
+            clearInterval(timer);
+            updateTimerDisplay();
+            document.getElementById('startBtn').classList.remove('hidden');
+            document.getElementById('minutes').disabled = false;
+            document.getElementById('seconds').disabled = false;
+            document.getElementById('pauseBtn').style.display = 'none';
+            document.getElementById('continueBtn').style.display = 'none';
+            document.getElementById('startBtn').style.display = 'inline-block';
+        }
+
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playCorrectSound() {
+            initAudio();
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = 1046;
+            gain.gain.setValueAtTime(0.3, audioContext.currentTime);
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            osc.start();
+            gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
+            osc.stop(audioContext.currentTime + 0.4);
+        }
+
+        function playWrongSound() {
+            initAudio();
+            const duration = 0.8;
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            oscillator.type = 'square';
+            oscillator.frequency.setValueAtTime(80, audioContext.currentTime);
+            gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
+            const frequencies = [80, 120, 200];
+            frequencies.forEach(freq => {
+                const osc = audioContext.createOscillator();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(freq, audioContext.currentTime);
+                osc.connect(gainNode);
+                osc.start();
+                osc.stop(audioContext.currentTime + duration * 0.3);
+            });
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + duration);
+        }
+
+        function playCelebrationSound() {
+            initAudio();
+            const baseTime = audioContext.currentTime;
+            const notes = [523.25, 587.33, 659.26, 698.46, 783.99, 880];
+            notes.forEach((freq, index) => {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, baseTime + index * 0.15);
+                gain.gain.setValueAtTime(0.3, baseTime + index * 0.15);
+                gain.gain.exponentialRampToValueAtTime(0.01, baseTime + index * 0.15 + 0.2);
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                osc.start(baseTime + index * 0.15);
+                osc.stop(baseTime + index * 0.15 + 0.2);
+            });
+        }
+
+        function refreshVocabList() {
+            const vocabItems = document.getElementById('vocabItems');
+            vocabItems.innerHTML = '';
+            vocabulary[currentLang].forEach((item, index) => {
+                vocabItems.innerHTML += `
+                <div class="vocab-item">
+                    <input type="checkbox" class="vocab-checkbox" value="${index}">
+                    <span>${item.a} - ${item.b}</span>
+                    <button onclick="deleteVocabulary(${index})">❌</button>
+                </div>
+                `;
+            });
+            toggleAll(document.getElementById('selectAll'));
+        }
+
+        function toggleAll(selectAllCheckbox) {
+            const checkboxes = document.querySelectorAll('.vocab-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAllCheckbox.checked;
+            });
+        }
+
+        
+function addVocabulary() {
+    const delimiter = document.getElementById('delimiter').value || '=';
+    const entries = document.getElementById('newWords').value.trim().split('\n');
+    entries.forEach(entry => {
+        const lastDelimiterIndex = entry.lastIndexOf(delimiter);
+        if (lastDelimiterIndex !== -1) {
+            const langA = entry.substring(0, lastDelimiterIndex).trim();
+            const langB = entry.substring(lastDelimiterIndex + delimiter.length).trim();
+            if (langA && langB) {
+                vocabulary[currentLang].push({ a: langA, b: langB });
+            }
+        }
+    });
+    document.getElementById('newWords').value = '';
+    refreshVocabList();
+}
+
+
+        function deleteVocabulary(index) {
+            vocabulary[currentLang].splice(index, 1);
+            refreshVocabList();
+        }
+
+        function deleteSelected() {
+            const checkboxes = document.querySelectorAll('.vocab-checkbox:checked');
+            const indicesToDelete = Array.from(checkboxes).map(checkbox => parseInt(checkbox.value));
+            indicesToDelete.sort((a, b) => b - a);
+            indicesToDelete.forEach(index => deleteVocabulary(index));
+        }
+
+        function calculateInitialTime() {
+            const minutes = parseInt(document.getElementById('minutes').value) || 0;
+            const seconds = parseInt(document.getElementById('seconds').value) || 0;
+            return (minutes * 60) + seconds;
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+            const seconds = (timeLeft % 60).toString().padStart(2, '0');
+            document.getElementById('timer').textContent = `⏳ Time Left: ${minutes}:${seconds}`;
+        }
+
+        function shuffle(array) {
+            return array.sort(() => Math.random() - 0.5);
+        }
+
+        function startGame() {
+            timeLeft = calculateInitialTime();
+            if (timeLeft <= 0) {
+                alert('Please set valid time!');
+                return;
+            }
+            if (vocabulary[currentLang].length === 0) {
+                alert('Please add vocabulary first!');
+                return;
+            }
+
+            currentIndex = 0;
+            score = 0;
+            document.getElementById('score').textContent = '⭐ Score: 0';
+            document.getElementById('startBtn').classList.add('hidden');
+
+            document.getElementById('minutes').disabled = true;
+            document.getElementById('seconds').disabled = true;
+            document.getElementById('pauseBtn').style.display = 'inline-block';
+            document.getElementById('continueBtn').style.display = 'none';
+
+            initAudio();
+            audioContext.resume();
+            shuffledWords = shuffle([...vocabulary[currentLang]]);
+            createMeaningBoxes();
+            showNextWord();
+            clearInterval(timer);
+            updateTimerDisplay();
+            timer = setInterval(() => {
+                if (!isPaused) {
+                    timeLeft--;
+                    updateTimerDisplay();
+                    if (timeLeft <= 0) endGame();
+                }
+            }, 1000);
+        }
+
+        function pauseGame() {
+            isPaused = true;
+            clearInterval(timer);
+            document.getElementById('pauseBtn').style.display = 'none';
+            document.getElementById('continueBtn').style.display = 'inline-block';
+            document.querySelectorAll('.meaning-box').forEach(box => {
+                box.style.pointerEvents = 'none';
+            });
+        }
+
+        function continueGame() {
+            isPaused = false;
+            document.getElementById('pauseBtn').style.display = 'inline-block';
+            document.getElementById('continueBtn').style.display = 'none';
+            document.querySelectorAll('.meaning-box').forEach(box => {
+                box.style.pointerEvents = 'auto';
+            });
+
+            timer = setInterval(() => {
+                if (!isPaused) {
+                    timeLeft--;
+                    updateTimerDisplay();
+                    if (timeLeft <= 0) endGame();
+                }
+            }, 1000);
+        }
+
+        function showNextWord() {
+            if (currentIndex >= shuffledWords.length || timeLeft <= 0) {
+                endGame();
+                return;
+            }
+            document.getElementById('currentWord').textContent = shuffledWords[currentIndex].a;
+        }
+
+        function createMeaningBoxes() {
+            const meaningArea = document.getElementById('meaningArea');
+            meaningArea.innerHTML = '';
+            const answers = vocabulary[currentLang].map(item => item.b);
+            answers.forEach(text => {
+                const box = document.createElement('div');
+                box.className = 'meaning-box';
+                box.textContent = text;
+                box.onclick = (e) => handleClick(e.target);
+                meaningArea.appendChild(box);
+            });
+        }
+
+        function handleClick(box) {
+            if (box.classList.contains('correct') || isPaused) return;
+
+            const isCorrect = box.textContent === shuffledWords[currentIndex].b;
+
+            if (isCorrect) {
+                playCorrectSound();
+                score++;
+                document.getElementById('score').textContent = `⭐ Score: ${score}`;
+                box.classList.add('correct');
+            } else {
+                playWrongSound();
+            }
+
+            currentIndex++;
+            showNextWord();
+        }
+
+        function endGame() {
+            playCelebrationSound();
+            clearInterval(timer);
+            document.getElementById('currentWord').innerHTML = `🎉 Challenge Complete! Final Score: ${score}`;
+            document.getElementById('startBtn').classList.remove('hidden');
+            document.getElementById('startBtn').textContent = 'Replay 🔄';
+            document.getElementById('minutes').disabled = false;
+            document.getElementById('seconds').disabled = false;
+            document.getElementById('pauseBtn').style.display = 'none';
+            document.getElementById('continueBtn').style.display = 'none';
+        }
+
+        function showVocabEditor() {
+            document.getElementById('vocabManager').classList.remove('hidden');
+            document.getElementById('container').classList.add('hidden');
+            refreshVocabList();
+        }
+
+        function showGamePage() {
+            document.getElementById('vocabManager').classList.add('hidden');
+            document.getElementById('container').classList.remove('hidden');
+            document.getElementById('startBtn').classList.remove('hidden');
+            updateInputPlaceholders();
+            clearInterval(timer);
+            score = 0;
+            document.getElementById('score').textContent = '⭐ Score: 0';
+            timeLeft = calculateInitialTime();
+            updateTimerDisplay();
+            shuffledWords = shuffle([...vocabulary[currentLang]]);
+            createMeaningBoxes();
+            showNextWord();
+        }
+
+        updateInputPlaceholders();
+        refreshVocabList();
+        document.getElementById('currentWord').textContent = 'Welcome to the game! 🌸';
+
+        function importFromCSV() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.csv';
+            input.onchange = async (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.readAsText(file);
+                reader.onload = (e) => {
+                let text = e.target.result;
+                if (text.includes('�')) { // 检测是否存在乱码字符
+                    reader.readAsText(file, 'GBK'); // 重新以 GBK 编码读取
+                    reader.onload = (e) => {
+                    text = e.target.result;
+                    processCSV(text);
+                    };
+                } else {
+                    processCSV(text);
+                }
+                };
+            }
+            };
+            input.click();
+        }
+
+        function processCSV(text) {
+            const lines = text.split('\n');
+            lines.forEach(line => {
+            const [langA, langB] = line.split(',').map(item => item.trim());
+            if (langA && langB) {
+                vocabulary[currentLang].push({ a: langA, b: langB });
+            }
+            });
+            refreshVocabList();
+        }
+
+        function swapLanguages() {
+            vocabulary[currentLang] = vocabulary[currentLang].map(item => {
+                return { a: item.b, b: item.a };})
+            refreshVocabList();
+            console.log(vocabulary)
+        }
+
+        function exportToCSV() {
+            const csvContent = vocabulary[currentLang].map(item => `${item.a},${item.b}`).join('\n');
+            const bom = '\uFEFF'; // 添加 BOM 以解决中文乱码问题
+            const blob = new Blob([bom+csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'vocabulary.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+function updatePlaceholder() {
+    updateInputPlaceholders();
+}
+    </script>
+</body>
+</html>
